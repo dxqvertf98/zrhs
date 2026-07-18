@@ -50,15 +50,15 @@
                     <button class="arrow-btn" id="left-arrow">◀</button>
                     <div class="lang-slider-container" id="lang-container">
                         <div class="lang-slider" id="lang-slider">
-                            <button class="lang-btn">베트남어</button>
-                            <button class="lang-btn">중국어</button>
-                            <button class="lang-btn">영어</button>
-                            <button class="lang-btn">일본어</button>
-                            <button class="lang-btn">몽골어</button>
+                            <button class="lang-btn" data-code="vi">베트남어</button>
+                            <button class="lang-btn" data-code="zh">중국어</button>
+                            <button class="lang-btn" data-code="en">영어</button>
+                            <button class="lang-btn" data-code="ja">일본어</button>
+                            <button class="lang-btn" data-code="mn">몽골어</button>
                         </div>
                     </div>
                     <button class="arrow-btn" id="right-arrow">▶</button>
-                    <button class="circle-btn">&gt;</button>
+                    <button class="circle-btn" id="translate-btn" title="번역 실행">&gt;</button>
                 </div>
                 <div class="scroll-indicator-bg">
                     <div class="scroll-indicator-bar" id="scroll-bar"></div>
@@ -109,10 +109,10 @@
 
         <!-- [추가된 화면 2] 아이디 로그인 화면 -->
         <main class="main-content screen auth-screen" id="id-login-screen" style="display: none;">
-            <h2 class="auth-title">아이디 로그인</h2>
+            <h2 class="auth-title">이메일 로그인</h2>
             <form class="auth-form" id="id-login-form">
                 <div class="input-group">
-                    <label for="login-username">아이디</label>
+                    <label for="login-username">이메일</label>
                     <input id="login-username" name="username" type="text" class="auth-input" autocomplete="username" required>
                 </div>
                 <div class="input-group">
@@ -135,10 +135,6 @@
                 <div class="input-group">
                     <label for="signup-email">이메일</label>
                     <input id="signup-email" name="email" type="email" class="auth-input" maxlength="254" autocomplete="email" required>
-                </div>
-                <div class="input-group">
-                    <label for="signup-username">아이디</label>
-                    <input id="signup-username" name="username" type="text" class="auth-input" minlength="4" maxlength="40" autocomplete="username" required>
                 </div>
                 <div class="input-group">
                     <label for="signup-password">비밀번호</label>
@@ -188,7 +184,17 @@
             </div>
         </div>
     </div>
+
+    <!-- 용어 설명 팝업: 번역 결과에서 헷갈리는 단어를 탭했을 때 뜸 -->
+    <div class="glossary-popover" id="glossary-popover" hidden>
+        <button type="button" class="popover-close" id="popover-close">✕</button>
+        <div class="popover-title" id="popover-title"></div>
+        <div class="popover-body" id="popover-body"></div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
 <script src="js/script.js"></script>
 

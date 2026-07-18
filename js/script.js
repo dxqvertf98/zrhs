@@ -1,3 +1,10 @@
+const supabaseClient = supabase.createClient(
+    "https://qqooqexctuznhzwuzgwg.supabase.co",
+    "sb_publishable_ZhvYd3IEYCJEYEe1T-cQFw_VFjWRM7K"
+);
+
+console.log("Supabase 연결:", supabaseClient);
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // 1. 스플래시(로딩) 화면 및 초기 화면 전환
@@ -68,6 +75,196 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 3-1. 번역할 언어 선택 (버튼 클릭 시 선택 상태로 표시)
+    const langButtons = document.querySelectorAll('.lang-btn');
+    let selectedLangCode = null;
+    let selectedLangLabel = null;
+
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            langButtons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedLangCode = btn.dataset.code;
+            selectedLangLabel = btn.textContent.trim();
+        });
+    });
+
+    // 3-2. AI 맥락 번역 실행
+    const inputBox = document.querySelector('.input-box');
+    const outputBox = document.querySelector('.output-box');
+    const translateBtn = document.getElementById('translate-btn');
+    const glossaryPopover = document.getElementById('glossary-popover');
+    const popoverTitle = document.getElementById('popover-title');
+    const popoverBody = document.getElementById('popover-body');
+    const popoverClose = document.getElementById('popover-close');
+
+    const langNames = { vi: '베트남어', zh: '중국어', en: '영어', ja: '일본어', mn: '몽골어' };
+
+    if (popoverClose && glossaryPopover) {
+        popoverClose.addEventListener('click', () => { glossaryPopover.hidden = true; });
+    }
+
+    function showGlossaryPopover(kind, title, body) {
+        if (!glossaryPopover) return;
+        glossaryPopover.classList.toggle('doc', kind === 'doc');
+        popoverTitle.textContent = title;
+        popoverBody.textContent = body;
+        glossaryPopover.hidden = false;
+    }
+
+    // "생기부 (학교생활기록부)", "e-알리미 / 하이클래스" 처럼 하나의 항목에 여러 이름이 섞여 있는 경우,
+    // '/' 와 '(' ')' 를 기준으로 쪼개서 각각의 이름을 전부 뽑아냄 (예: ["생기부", "학교생활기록부"])
+    function extractTermVariants(termString) {
+        return termString
+            .split(/[\/()]/)
+            .map(part => part.trim())
+            .filter(Boolean);
+    }
+
+    // 아래 5번에서 선언하는 학교 용어 사전(rawData)에서 같은 단어를 찾음.
+    // (함수 선언은 호이스팅되고, 실제 호출은 버튼 클릭 시점이라 rawData가 이미 준비된 뒤이므로 문제 없음)
+    function findDictionaryMatch(term) {
+        if (!term) return null;
+        const clean = term.trim();
+        return rawData.find(item => {
+            const variants = extractTermVariants(item.term);
+            return variants.some(v => v === clean || v.includes(clean) || clean.includes(v));
+        }) || null;
+    }
+
+    // 사전에 등록된 단어면 학교 용어 사전 화면으로 이동해서 그 단어를 바로 검색해줌
+    function goToDictionaryTerm(rawTerm) {
+        const match = findDictionaryMatch(rawTerm);
+        showScreen('dictionary-screen');
+        if (searchInput) {
+            searchInput.value = match ? match.term.split(/[\/(]/)[0].trim() : rawTerm.trim();
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    }
+
+    // 원문 안에서 우리 사전(rawData)에 실제로 등장하는 단어만 골라 AI에게 넘겨줄 컨텍스트로 만듦
+    // -> 22개를 전부 보낼 필요 없이, 이 문장에 실제로 쓰인 단어의 "뜻풀이"만 참고자료로 제공
+    function buildDictionaryContext(text) {
+        const matched = rawData.filter(item => {
+            const variants = extractTermVariants(item.term);
+            return variants.some(v => text.includes(v));
+        });
+        if (matched.length === 0) return '(해당 없음 - 이 문장에는 사전에 매칭되는 단어가 없음)';
+        return matched.map(item => `- ${item.term}: ${item.def}`).join('\n');
+    }
+
+    // AI 모델에게 내릴 지시문. 사전에 있는 단어는 뜻풀이를 참고해 "자세히" 설명하게 하고,
+    // 사전에 없어도 헷갈릴 만한 단어는 짧게라도 설명하게 함.
+    function buildTranslationPrompt(langName, dictionaryContext) {
+        return `당신은 한국 학교/유치원 안내문을 다문화 가정 보호자가 이해할 수 있도록 ${langName}로 번역하는 전문가입니다.
+
+[번역 규칙]
+1. 입력된 한국어 문장 전체를 ${langName}로 자연스럽게 번역하세요.
+2. 아래 "학교 용어 사전"에 있는 단어가 문장에 나오면, 그 뜻풀이를 참고하여 ${langName}로 자세하고 구체적으로(2~3문장) 설명을 새로 작성하고, 다음처럼 표시하세요:
+   <span class="glossary has-doc" data-term="원래 한국어 단어" data-explain="여기에 자세한 설명">번역된 단어</span>
+3. 사전에는 없지만 외국인 보호자가 헷갈릴 수 있는 다른 한국 학교 문화 단어(예: 현장체험학습, 생활기록부 등)가 나오면, 짧게라도 설명을 붙여 다음처럼 표시하세요:
+   <span class="glossary" data-explain="여기에 설명">번역된 단어</span>
+4. 그 외 인사말, 코드블록, 다른 텍스트 없이 번역 결과 HTML만 출력하세요.
+
+[학교 용어 사전 - 이 문장에 등장하는 단어의 뜻풀이]
+${dictionaryContext}`;
+    }
+
+    // 실제 AI 모델 호출.
+    // Google AI Studio(Gemini) API를 브라우저에서 직접 호출합니다.
+    // ⚠️ 보안 참고: API 키가 클라이언트 코드에 노출됩니다.
+    // Google Cloud Console에서 이 키에 HTTP 리퍼러(도메인) 제한을 걸어두는 것을 권장합니다.
+    const GOOGLE_API_KEY = "GEMINI_API_KEY";
+    const GEMINI_MODEL = "gemini-flash-latest";
+
+    async function callAIModel(systemPrompt, userText) {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GOOGLE_API_KEY}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    system_instruction: { parts: [{ text: systemPrompt }] },
+                    contents: [{ role: "user", parts: [{ text: userText }] }],
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`AI 번역 서버 호출에 실패했습니다: ${errText}`);
+        }
+
+        const data = await response.json();
+        const html = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+        if (!html) {
+            throw new Error('AI 응답 형식이 올바르지 않습니다.');
+        }
+
+        return html.replace(/```html/g, '').replace(/```/g, '').trim();
+    }
+
+    // AI가 돌려준 HTML(<span class="glossary [has-doc]" data-term="..." data-explain="...">)을 화면에 렌더링
+    function renderTranslationResult(html) {
+        const clean = window.DOMPurify
+            ? DOMPurify.sanitize(html, { ADD_ATTR: ['data-term', 'data-explain'] })
+            : html;
+
+        outputBox.innerHTML = clean;
+        outputBox.classList.add('has-content');
+
+        outputBox.querySelectorAll('.glossary').forEach(span => {
+            const explain = span.getAttribute('data-explain') || '';
+
+            if (span.classList.contains('has-doc')) {
+                // 학교 용어 사전에 있는 단어 -> 파란색 + 클릭 시 사전 화면으로 이동
+                const term = span.getAttribute('data-term') || span.textContent;
+                span.addEventListener('click', () => goToDictionaryTerm(term));
+            } else if (explain) {
+                // 사전에는 없지만 AI가 설명을 붙여준 단어 -> 탭하면 말풍선으로 설명
+                span.addEventListener('click', () => showGlossaryPopover('term', span.textContent, explain));
+            }
+        });
+    }
+
+    async function translateNotice() {
+        if (!inputBox || !outputBox) return;
+        const text = inputBox.value.trim();
+
+        if (!text) {
+            outputBox.classList.remove('has-content');
+            outputBox.textContent = '번역할 안내문을 먼저 입력해주세요.';
+            return;
+        }
+        if (!selectedLangCode) {
+            outputBox.classList.remove('has-content');
+            outputBox.textContent = '번역할 언어를 먼저 선택해주세요.';
+            return;
+        }
+
+        outputBox.classList.remove('has-content');
+        outputBox.textContent = '번역 중입니다...';
+        if (translateBtn) translateBtn.disabled = true;
+
+        try {
+            const dictionaryContext = buildDictionaryContext(text);
+            const langName = langNames[selectedLangCode] || selectedLangLabel;
+            const systemPrompt = buildTranslationPrompt(langName, dictionaryContext);
+            const html = await callAIModel(systemPrompt, text);
+            renderTranslationResult(html);
+        } catch (error) {
+            outputBox.classList.remove('has-content');
+            outputBox.textContent = '번역 중 오류가 발생했어요: ' + error.message;
+        } finally {
+            if (translateBtn) translateBtn.disabled = false;
+        }
+    }
+
+    if (translateBtn) {
+        translateBtn.addEventListener('click', translateNotice);
+    }
+
     // 4. 화면 전환(네비게이션) 기능
     const screens = document.querySelectorAll('.screen');
     const navLinks = document.querySelectorAll('.nav-link');
@@ -128,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { term: "임원 선거", def: "반장·부반장 선출 (저학년부터 진행, 생기부에 기록)" },
         { term: "재량휴업일", def: "학교장 지정 특별 휴일 (공휴일 아님)" },
         { term: "정기고사 이의신청", def: "채점 오류 공식 이의 제기 기간" },
+        { term: "현장체험학습", def: "학교 밖으로 나가는 소풍·견학 형태의 수업 (참가 동의서·비용 납부 필요, 무단으로 빠지면 결석 처리될 수 있음)" },
         { term: "지각/조퇴/결과", def: "출결 세부 용어 (생기부에 기록, 누적 시 진학에 불리)" },
         { term: "지필평가", def: "중간·기말고사 (정기 필기시험)" },
         { term: "창체(창의적 체혐활동)", def: "정규 교과 외 필수 활동 (자율·동아리·봉사·진로)" },
@@ -306,7 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 7. 회원가입, 로그인, 소셜 로그인
     // 배포 환경에서는 index.html 전에 window.MAEUM_API_BASE_URL을 지정해 API 주소를 바꿀 수 있습니다.
-    const API_BASE_URL = window.MAEUM_API_BASE_URL || 'http://localhost:8080';
     const accessTokenKey = 'maeumari.accessToken';
     const userKey = 'maeumari.user';
     const loginForm = document.getElementById('id-login-form');
@@ -381,67 +578,102 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (loginForm) {
-        loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            setMessage(loginMessage, '');
-            const formData = new FormData(loginForm);
-            try {
-                const result = await apiRequest('/api/auth/login', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        username: formData.get('username'),
-                        password: formData.get('password')
-                    })
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        setMessage(loginMessage, '');
+
+        const formData = new FormData(loginForm);
+
+        try {
+            const { data, error } =
+                await supabaseClient.auth.signInWithPassword({
+                    email: formData.get('username'),
+                    password: formData.get('password')
                 });
-                saveSession(result);
-                loginForm.reset();
-                showScreen('main-screen');
-            } catch (error) {
-                setMessage(loginMessage, error.message);
+
+            if (error) {
+                throw error;
             }
-        });
-    }
+
+            console.log(data);
+
+            loginForm.reset();
+            showScreen('main-screen');
+
+        } catch (error) {
+            setMessage(loginMessage, error.message);
+        }
+    });
+}
 
     if (signupForm) {
-        signupForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            setMessage(signupMessage, '');
-            const formData = new FormData(signupForm);
-            if (formData.get('password') !== formData.get('passwordConfirm')) {
-                setMessage(signupMessage, '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
-                return;
+    signupForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        setMessage(signupMessage, '');
+
+        const formData = new FormData(signupForm);
+
+        if (formData.get('password') !== formData.get('passwordConfirm')) {
+            setMessage(signupMessage, '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: formData.get('email'),
+                password: formData.get('password')
+            });
+
+            if (error) {
+                throw error;
             }
-            try {
-                const result = await apiRequest('/api/auth/signup', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        username: formData.get('username'),
-                        password: formData.get('password'),
-                        displayName: formData.get('displayName'),
-                        preferredLanguage: formData.get('preferredLanguage'),
-                        email: formData.get('email'),
-                        termsAccepted: formData.get('termsAccepted') === 'on'
-                    })
-                });
-                signupForm.reset();
-                if (result.emailVerificationRequired) {
-                    setMessage(signupMessage, result.message, false);
-                    return;
-                }
-                saveSession(result.authentication);
-                showScreen('main-screen');
-            } catch (error) {
-                setMessage(signupMessage, error.message);
-            }
-        });
-    }
+
+            signupForm.reset();
+
+            setMessage(
+                signupMessage,
+                '회원가입 성공! 이메일 인증을 확인해주세요.',
+                false
+            );
+
+            console.log(data);
+
+        } catch (error) {
+            setMessage(signupMessage, error.message);
+        }
+    });
+}
 
     function startSocialLogin(provider) {
         window.location.assign(`${API_BASE_URL}/oauth2/authorization/${provider}`);
     }
 
-    if (googleLoginButton) googleLoginButton.addEventListener('click', () => startSocialLogin('google'));
-    if (kakaoLoginButton) kakaoLoginButton.addEventListener('click', () => startSocialLogin('kakao'));
+    googleLoginButton.addEventListener("click", async()=>{
+
+        const {error} =
+        await supabaseClient.auth.signInWithOAuth({
+            provider:"google"
+        });
+
+        if(error){
+            console.log(error.message);
+        }
+    });
+
+    kakaoLoginButton.addEventListener("click", async()=>{
+
+        const {error} =
+        await supabaseClient.auth.signInWithOAuth({
+            provider:"kakao"
+        });
+
+        if(error){
+            console.log(error.message);
+        }
+
+    });
 
     if (logoutButton) {
         logoutButton.addEventListener('click', () => {
@@ -450,25 +682,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function configureSocialLoginButtons() {
-        try {
-            const providers = await apiRequest('/api/auth/social/providers');
-            const enabled = new Set(providers);
-            [
-                ['google', googleLoginButton],
-                ['kakao', kakaoLoginButton]
-            ].forEach(([provider, button]) => {
-                if (!button) return;
-                button.disabled = !enabled.has(provider);
-                if (button.disabled) button.title = '소셜 로그인 설정이 아직 완료되지 않았습니다.';
-            });
-            if (providers.length === 0) {
-                setMessage(socialMessage, '소셜 로그인은 현재 준비 중입니다. 아이디 로그인을 이용해 주세요.');
-            }
-        } catch {
-            setMessage(socialMessage, '로그인 서버에 연결할 수 없습니다.');
-        }
+    function configureSocialLoginButtons() {
+    if (googleLoginButton) {
+        googleLoginButton.disabled = false;
     }
+
+    if (kakaoLoginButton) {
+        kakaoLoginButton.disabled = false;
+    }
+}
 
     async function loadConversationHistory() {
         if (!historyStatus || !historyList) return;
@@ -552,5 +774,4 @@ document.addEventListener('DOMContentLoaded', () => {
     completeOAuthLogin();
 })
 
-
-
+console.log(supabaseClient);
