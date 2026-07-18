@@ -2,6 +2,8 @@
 
 Spring Boot 기반 백엔드입니다. 현재 구현 범위는 회원가입·로그인과 **로그인한 사용자 본인의 이전 대화 기록** 저장/조회입니다. AI 번역은 아직 연결하지 않았으며, 이후 AI가 만든 `translatedText`를 대화 기록 API에 저장하면 됩니다.
 
+직접 회원가입/로그인과 Google·Kakao 소셜 로그인을 모두 지원합니다. 소셜 로그인 버튼은 해당 제공자 키가 설정된 경우에만 활성화됩니다.
+
 ## 실행
 
 Java 17 이상과 Maven이 필요합니다.
@@ -12,6 +14,28 @@ mvn spring-boot:run
 ```
 
 기본 주소는 `http://localhost:8080`입니다. 개발용 H2 데이터베이스는 `./data`에 저장되므로 서버를 다시 시작해도 회원과 기록이 유지됩니다. 실제 배포 때는 `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_DRIVER`를 운영 DB 값으로 설정하고, `APP_JWT_SECRET`도 반드시 교체하세요.
+
+## Google·Kakao 로그인 설정
+
+소셜 로그인에는 각 제공자 콘솔에서 받은 키가 필요합니다. 키를 코드나 Git에 넣지 말고 환경 변수로 설정하세요.
+
+```powershell
+$env:GOOGLE_CLIENT_ID = "Google OAuth 클라이언트 ID"
+$env:GOOGLE_CLIENT_SECRET = "Google OAuth 클라이언트 보안 비밀"
+$env:KAKAO_CLIENT_ID = "Kakao REST API 키"
+$env:KAKAO_CLIENT_SECRET = "Kakao Client Secret" # 카카오 콘솔에서 Client Secret 사용 시에만
+$env:APP_OAUTH_SUCCESS_REDIRECT_URI = "http://localhost:5500/index.html"
+mvn spring-boot:run
+```
+
+두 콘솔 모두 다음 **백엔드 콜백 URI**를 등록해야 합니다. 실제 서비스 주소로 실행한다면 `localhost:8080` 부분만 운영 도메인으로 바꾸세요.
+
+```text
+http://localhost:8080/login/oauth2/code/google
+http://localhost:8080/login/oauth2/code/kakao
+```
+
+로그인 성공 뒤에는 `APP_OAUTH_SUCCESS_REDIRECT_URI`로 돌아가며, 프론트엔드가 URL fragment의 일회성 로그인 토큰을 받아 세션에 저장합니다. 프론트 페이지의 기본 API 주소는 `http://localhost:8080`이고, 다른 주소를 쓸 경우 `window.MAEUM_API_BASE_URL`에 지정할 수 있습니다.
 
 ## API
 
@@ -25,6 +49,9 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 |회원가입|`POST /api/auth/signup`|불필요|
 |로그인|`POST /api/auth/login`|불필요|
+|사용 가능한 소셜 로그인|`GET /api/auth/social/providers`|불필요|
+|Google 로그인 시작|`GET /oauth2/authorization/google`|불필요|
+|Kakao 로그인 시작|`GET /oauth2/authorization/kakao`|불필요|
 |내 정보|`GET /api/auth/me`|필요|
 |대화 저장|`POST /api/conversations`|필요|
 |내 이전 대화 목록|`GET /api/conversations`|필요|

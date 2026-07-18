@@ -39,16 +39,16 @@ public class AuthService {
                 request.displayName().trim(),
                 request.preferredLanguage().trim()
         ));
-        return authResponse(user);
+        return issueAccessToken(user);
     }
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(normalizeUsername(request.username()))
                 .orElseThrow(() -> new UnauthorizedException("아이디 또는 비밀번호가 올바르지 않습니다."));
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new UnauthorizedException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
-        return authResponse(user);
+        return issueAccessToken(user);
     }
 
     public UserResponse getUser(Long userId) {
@@ -57,7 +57,7 @@ public class AuthService {
         return toUserResponse(user);
     }
 
-    private AuthResponse authResponse(User user) {
+    public AuthResponse issueAccessToken(User user) {
         return new AuthResponse(
                 jwtService.createAccessToken(user.getId(), user.getUsername()),
                 "Bearer",

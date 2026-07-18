@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressBar = document.getElementById('progress-bar');
     const splashScreen = document.getElementById('splash-screen');
     const appScreens = document.getElementById('app-screens');
+    let requestedInitialScreen = 'main-screen';
 
     // 로딩 바 애니메이션 시작
     setTimeout(() => {
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (splashScreen) splashScreen.style.display = 'none';
         if (appScreens) {
             appScreens.style.display = 'flex';
-            showScreen('main-screen');
+            showScreen(requestedInitialScreen);
             renderDictionary(); // 사전 데이터 미리 준비
         }
     }, 2800); 
@@ -86,6 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetId === 'dictionary-screen') {
             calculateItemsPerPage();
             renderDictionary();
+        }
+
+        if (targetId === 'placeholder-screen') {
+            loadConversationHistory();
         }
     }
 
@@ -298,6 +303,247 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDictionary(); 
         });
     }
+
+    // 7. 회원가입, 로그인, 소셜 로그인
+    // 배포 환경에서는 index.html 전에 window.MAEUM_API_BASE_URL을 지정해 API 주소를 바꿀 수 있습니다.
+    const API_BASE_URL = window.MAEUM_API_BASE_URL || 'http://localhost:8080';
+    const accessTokenKey = 'maeumari.accessToken';
+    const userKey = 'maeumari.user';
+    const loginForm = document.getElementById('id-login-form');
+    const signupForm = document.getElementById('signup-form');
+    const loginMessage = document.getElementById('login-message');
+    const signupMessage = document.getElementById('signup-message');
+    const socialMessage = document.getElementById('social-login-message');
+    const googleLoginButton = document.getElementById('google-login-btn');
+    const kakaoLoginButton = document.getElementById('kakao-login-btn');
+    const menuLoginButton = document.getElementById('menu-login-btn');
+    const menuSignupLink = document.getElementById('menu-signup-link');
+    const logoutButton = document.getElementById('logout-btn');
+    const signedInUser = document.getElementById('signed-in-user');
+    const historyStatus = document.getElementById('history-status');
+    const historyList = document.getElementById('history-list');
+
+    function getAccessToken() {
+        return sessionStorage.getItem(accessTokenKey);
+    }
+
+    function getStoredUser() {
+        try {
+            return JSON.parse(sessionStorage.getItem(userKey));
+        } catch {
+            return null;
+        }
+    }
+
+    function saveSession(authResponse) {
+        sessionStorage.setItem(accessTokenKey, authResponse.accessToken);
+        sessionStorage.setItem(userKey, JSON.stringify(authResponse.user));
+        updateAuthArea();
+    }
+
+    function clearSession() {
+        sessionStorage.removeItem(accessTokenKey);
+        sessionStorage.removeItem(userKey);
+        updateAuthArea();
+    }
+
+    function updateAuthArea() {
+        const user = getStoredUser();
+        const isLoggedIn = Boolean(getAccessToken() && user);
+        if (signedInUser) {
+            signedInUser.hidden = !isLoggedIn;
+            signedInUser.textContent = isLoggedIn ? `${user.displayName}님` : '';
+        }
+        if (menuLoginButton) menuLoginButton.hidden = isLoggedIn;
+        if (menuSignupLink) menuSignupLink.hidden = isLoggedIn;
+        if (logoutButton) logoutButton.hidden = !isLoggedIn;
+    }
+
+    async function apiRequest(path, options = {}) {
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || '요청을 처리하지 못했습니다.');
+        }
+        return data;
+    }
+
+    function setMessage(element, message, isError = true) {
+        if (!element) return;
+        element.textContent = message;
+        element.style.color = isError ? '#d23b3b' : '#287a3c';
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setMessage(loginMessage, '');
+            const formData = new FormData(loginForm);
+            try {
+                const result = await apiRequest('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        password: formData.get('password')
+                    })
+                });
+                saveSession(result);
+                loginForm.reset();
+                showScreen('main-screen');
+            } catch (error) {
+                setMessage(loginMessage, error.message);
+            }
+        });
+    }
+
+    if (signupForm) {
+        signupForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setMessage(signupMessage, '');
+            const formData = new FormData(signupForm);
+            if (formData.get('password') !== formData.get('passwordConfirm')) {
+                setMessage(signupMessage, '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+                return;
+            }
+            try {
+                const result = await apiRequest('/api/auth/signup', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        password: formData.get('password'),
+                        displayName: formData.get('displayName'),
+                        preferredLanguage: formData.get('preferredLanguage')
+                    })
+                });
+                saveSession(result);
+                signupForm.reset();
+                showScreen('main-screen');
+            } catch (error) {
+                setMessage(signupMessage, error.message);
+            }
+        });
+    }
+
+    function startSocialLogin(provider) {
+        window.location.assign(`${API_BASE_URL}/oauth2/authorization/${provider}`);
+    }
+
+    if (googleLoginButton) googleLoginButton.addEventListener('click', () => startSocialLogin('google'));
+    if (kakaoLoginButton) kakaoLoginButton.addEventListener('click', () => startSocialLogin('kakao'));
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            clearSession();
+            showScreen('main-screen');
+        });
+    }
+
+    async function configureSocialLoginButtons() {
+        try {
+            const providers = await apiRequest('/api/auth/social/providers');
+            const enabled = new Set(providers);
+            [
+                ['google', googleLoginButton],
+                ['kakao', kakaoLoginButton]
+            ].forEach(([provider, button]) => {
+                if (!button) return;
+                button.disabled = !enabled.has(provider);
+                if (button.disabled) button.title = '소셜 로그인 설정이 아직 완료되지 않았습니다.';
+            });
+            if (providers.length === 0) {
+                setMessage(socialMessage, '소셜 로그인은 현재 준비 중입니다. 아이디 로그인을 이용해 주세요.');
+            }
+        } catch {
+            setMessage(socialMessage, '로그인 서버에 연결할 수 없습니다.');
+        }
+    }
+
+    async function loadConversationHistory() {
+        if (!historyStatus || !historyList) return;
+        const token = getAccessToken();
+        historyList.replaceChildren();
+        if (!token) {
+            historyStatus.textContent = '로그인하면 번역 기록을 확인할 수 있어요.';
+            return;
+        }
+
+        historyStatus.textContent = '이전 번역을 불러오는 중이에요.';
+        try {
+            const conversations = await apiRequest('/api/conversations', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (conversations.length === 0) {
+                historyStatus.textContent = '아직 저장된 번역 기록이 없어요.';
+                return;
+            }
+
+            historyStatus.textContent = `${conversations.length}개의 번역 기록이 있어요.`;
+            conversations.forEach((conversation) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'history-item';
+
+                const original = document.createElement('p');
+                original.className = 'history-original';
+                original.textContent = conversation.originalText;
+                const translation = document.createElement('p');
+                translation.className = 'history-translation';
+                translation.textContent = conversation.translatedText;
+                const date = document.createElement('time');
+                date.className = 'history-date';
+                date.dateTime = conversation.createdAt;
+                date.textContent = new Date(conversation.createdAt).toLocaleString('ko-KR');
+                item.append(original, translation, date);
+                item.addEventListener('click', () => {
+                    const input = document.querySelector('.input-box');
+                    const output = document.querySelector('.output-box');
+                    if (input) input.value = conversation.originalText;
+                    if (output) output.textContent = conversation.translatedText;
+                    showScreen('main-screen');
+                });
+                historyList.appendChild(item);
+            });
+        } catch (error) {
+            if (error.message.includes('로그인') || error.message.includes('인증')) clearSession();
+            historyStatus.textContent = error.message;
+        }
+    }
+
+    async function completeOAuthLogin() {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const token = params.get('access_token');
+        const oauthError = params.get('oauth_error');
+        if (!token && !oauthError) return;
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+        if (oauthError) {
+            setMessage(socialMessage, oauthError);
+            requestedInitialScreen = 'login-screen';
+            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
+            return;
+        }
+        try {
+            const user = await apiRequest('/api/auth/me', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            saveSession({ accessToken: token, user });
+            requestedInitialScreen = 'main-screen';
+            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
+        } catch (error) {
+            setMessage(socialMessage, '소셜 로그인 정보를 확인하지 못했습니다. 다시 시도해 주세요.');
+            requestedInitialScreen = 'login-screen';
+            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
+        }
+    }
+
+    updateAuthArea();
+    configureSocialLoginButtons();
+    completeOAuthLogin();
 })
 
 

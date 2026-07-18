@@ -41,6 +41,13 @@ class AuthAndConversationApiTest {
                 .andExpect(jsonPath("$[0].targetLanguage").value("en"));
     }
 
+    @Test
+    void socialProviderListIsPublicAndEmptyWithoutSecrets() throws Exception {
+        mockMvc.perform(get("/api/auth/social/providers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
     private String signUpAndGetToken(String username) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)

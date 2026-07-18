@@ -574,3 +574,94 @@ body, html {
 .auth-submit-btn:active {
     background-color: #5527d6;
 }
+
+.auth-message {
+    min-height: 20px;
+    margin: 16px 4px 0;
+    color: #d23b3b;
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.auth-input {
+    font-family: inherit;
+    background: #fff;
+}
+
+.history-title {
+    margin: 6px 0 0;
+    color: #3b5cb8;
+    font-size: 22px;
+}
+
+.history-status {
+    margin: 0;
+    color: #777;
+    font-size: 14px;
+}
+
+.history-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-bottom: 18px;
+}
+
+.history-item {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #d7d0f3;
+    border-radius: 12px;
+    background: #faf9ff;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+.history-item:focus-visible {
+    outline: 2px solid #6C3CE9;
+    outline-offset: 2px;
+}
+
+.history-original,
+.history-translation {
+    margin: 0;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.history-original {
+    color: #555;
+    font-size: 13px;
+}
+
+.history-translation {
+    margin-top: 7px;
+    color: #222;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.history-date {
+    display: block;
+    margin-top: 9px;
+    color: #888;
+    font-size: 12px;
+}
+
+.signed-in-user {
+    width: 100%;
+    margin: 0;
+    color: #4a2ba6;
+    font-size: 13px;
+    text-align: center;
+}
+
+.logout-btn {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}

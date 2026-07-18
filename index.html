@@ -84,20 +84,23 @@
             </div>
         </main>
 
-        <!-- 네 번째 화면: 임시 페이지 (이전 대화 등) -->
+        <!-- 네 번째 화면: 로그인한 사용자의 이전 대화 -->
         <main class="main-content screen" id="placeholder-screen" style="display: none;">
-            <div class="main-text" id="placeholder-title">페이지 준비 중입니다.</div>
+            <h2 class="history-title" id="placeholder-title">이전 대화 보기</h2>
+            <p class="history-status" id="history-status">로그인하면 번역 기록을 확인할 수 있어요.</p>
+            <div class="history-list" id="history-list"></div>
         </main>
 
         <!-- [추가된 화면 1] 로그인 선택 화면 -->
         <main class="main-content screen auth-screen" id="login-screen" style="display: none;">
             <h2 class="auth-title">로그인</h2>
             <div class="auth-button-group">
-                <button class="auth-outline-btn">Google 로그인</button>
-                <button class="auth-outline-btn">kakao 로그인</button>
+                <button type="button" class="auth-outline-btn" id="google-login-btn">Google 로그인</button>
+                <button type="button" class="auth-outline-btn" id="kakao-login-btn">Kakao 로그인</button>
                 <!-- 아이디 로그인 클릭 시 id-login-screen으로 이동 -->
-                <button class="auth-outline-btn nav-link" data-target="id-login-screen">아이디 로그인</button>
+                <button type="button" class="auth-outline-btn nav-link" data-target="id-login-screen">아이디 로그인</button>
             </div>
+            <p class="auth-message" id="social-login-message" aria-live="polite"></p>
             <div class="auth-footer">
                 <!-- 회원가입 클릭 시 signup-screen으로 이동 -->
                 <a href="#" class="auth-link nav-link" data-target="signup-screen">회원가입</a>
@@ -107,37 +110,53 @@
         <!-- [추가된 화면 2] 아이디 로그인 화면 -->
         <main class="main-content screen auth-screen" id="id-login-screen" style="display: none;">
             <h2 class="auth-title">아이디 로그인</h2>
-            <form class="auth-form" onsubmit="event.preventDefault();">
+            <form class="auth-form" id="id-login-form">
                 <div class="input-group">
-                    <label>아이디</label>
-                    <input type="text" class="auth-input">
+                    <label for="login-username">아이디</label>
+                    <input id="login-username" name="username" type="text" class="auth-input" autocomplete="username" required>
                 </div>
                 <div class="input-group">
-                    <label>비밀번호</label>
-                    <input type="password" class="auth-input">
+                    <label for="login-password">비밀번호</label>
+                    <input id="login-password" name="password" type="password" class="auth-input" autocomplete="current-password" required>
                 </div>
                 <button type="submit" class="auth-submit-btn">완료</button>
             </form>
+            <p class="auth-message" id="login-message" aria-live="polite"></p>
         </main>
 
         <!-- [추가된 화면 3] 회원가입 화면 -->
         <main class="main-content screen auth-screen" id="signup-screen" style="display: none;">
             <h2 class="auth-title">회원가입</h2>
-            <form class="auth-form" onsubmit="event.preventDefault();">
+            <form class="auth-form" id="signup-form">
                 <div class="input-group">
-                    <label>아이디</label>
-                    <input type="text" class="auth-input">
+                    <label for="signup-display-name">이름</label>
+                    <input id="signup-display-name" name="displayName" type="text" class="auth-input" maxlength="50" autocomplete="name" required>
                 </div>
                 <div class="input-group">
-                    <label>비밀번호</label>
-                    <input type="password" class="auth-input">
+                    <label for="signup-username">아이디</label>
+                    <input id="signup-username" name="username" type="text" class="auth-input" minlength="4" maxlength="40" autocomplete="username" required>
                 </div>
                 <div class="input-group">
-                    <label>비밀번호 확인</label>
-                    <input type="password" class="auth-input">
+                    <label for="signup-password">비밀번호</label>
+                    <input id="signup-password" name="password" type="password" class="auth-input" minlength="8" maxlength="72" autocomplete="new-password" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-password-confirm">비밀번호 확인</label>
+                    <input id="signup-password-confirm" name="passwordConfirm" type="password" class="auth-input" minlength="8" maxlength="72" autocomplete="new-password" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-language">주 사용 언어</label>
+                    <select id="signup-language" name="preferredLanguage" class="auth-input" required>
+                        <option value="vi">베트남어</option>
+                        <option value="zh">중국어</option>
+                        <option value="en">영어</option>
+                        <option value="ja">일본어</option>
+                        <option value="mn">몽골어</option>
+                    </select>
                 </div>
                 <button type="submit" class="auth-submit-btn">완료</button>
             </form>
+            <p class="auth-message" id="signup-message" aria-live="polite"></p>
             <div class="auth-footer">
                 <a href="#" class="auth-link nav-link" data-target="signup-screen">회원가입</a>
             </div>
@@ -153,8 +172,10 @@
                 
                 <div class="auth-area">
                     <!-- nav-link와 data-target 추가하여 클릭 시 화면 이동 -->
-                    <button class="login-btn nav-link" data-target="login-screen">로그인</button>
-                    <a href="#" class="signup-link nav-link" data-target="signup-screen">회원가입</a>
+                    <p class="signed-in-user" id="signed-in-user" hidden></p>
+                    <button class="login-btn nav-link" id="menu-login-btn" data-target="login-screen">로그인</button>
+                    <a href="#" class="signup-link nav-link" id="menu-signup-link" data-target="signup-screen">회원가입</a>
+                    <button type="button" class="signup-link logout-btn" id="logout-btn" hidden>로그아웃</button>
                 </div>
             </div>
         </div>
