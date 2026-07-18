@@ -13,7 +13,7 @@ body, html {
     justify-content: center;
 }
 
-        /* 모바일 컨테이너 (가운데 정렬된 모바일 사이즈 화면) */
+ /* 모바일 컨테이너 (가운데 정렬된 모바일 사이즈 화면) */
 .mobile-container {
     width: 100%;
     max-width: 400px; /* 일반적인 모바일 최대 너비 */
@@ -24,7 +24,7 @@ body, html {
     overflow: hidden;
 }
 
-        /* 1. 스플래시(로딩) 화면 스타일 */
+/* 1. 스플래시(로딩) 화면 스타일 */
 #splash-screen {
     display: flex;
     flex-direction: column;
@@ -70,7 +70,7 @@ body, html {
     font-weight: bold;
 }
 
-        /* 하단 로딩바 영역 */
+ /* 하단 로딩바 영역 */
 .loading-area {
     width: 100%;
     display: flex;
@@ -105,7 +105,7 @@ body, html {
     transition: width 2.5s ease-in-out;
 }
 
-        /* 2. 메인 화면 스타일 (초기엔 숨김 처리) */
+/* 2. 메인 화면 스타일 (초기엔 숨김 처리) */
 #main-screen {
     display: none;
     height: 100%;
@@ -136,7 +136,7 @@ body, html {
     align-items: center;
     padding: 20px;
     position: relative;
-    z-index: 10; /* 메뉴보다 위에 있게 설정 */
+    /* z-index: 10;  <-- ❌ 이 줄을 과감히 지워주세요! */
 }
 
 .logo-area {
@@ -176,6 +176,8 @@ body, html {
     align-items: center;
     gap: 5px;
     cursor: pointer;
+    
+    position: relative; /* 🌟 새로 추가해주세요 */
     z-index: 100; /* 메뉴가 열려도 클릭할 수 있게 최상단 배치 */
 }
 
@@ -318,13 +320,14 @@ body, html {
     height: 100%;
     background-color: #EAE6FE; /* 연한 보라색 배경 */
     box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    transform: translateX(100%); /* 처음엔 화면 우측 밖으로 밀어냄 */
-    transition: transform 0.4s ease-in-out; /* 부드럽게 나오는 애니메이션 */
+    transform: translateX(100%); 
+    transition: transform 0.4s ease-in-out; 
     display: flex;
     flex-direction: column;
-    padding-top: 120px; /* 메뉴 버튼 아래부터 내용 시작 */
+    padding-top: 120px; 
+    
+    z-index: 50; /* 🌟 새로 추가해주세요 (본문은 덮고 버튼보단 아래에) */
 }
-
 /* 메뉴 열렸을 때 추가되는 클래스 */
 .side-menu.open {
     transform: translateX(0); /* 제자리로 돌아와 화면에 보임 */
@@ -478,4 +481,96 @@ body, html {
     border-color: #ccc;
     color: #ccc;
     cursor: not-allowed;
+}
+
+/* 인증 관련 화면 (로그인, 회원가입) 스타일 */
+
+.auth-screen {
+    padding: 30px 20px;
+}
+
+.auth-title {
+    color: #3b5cb8; /* 사진 시안의 파란색 텍스트 */
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+/* 1. 로그인 선택 화면 버튼들 */
+.auth-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-outline-btn {
+    width: 100%;
+    padding: 15px;
+    border: 1.5px solid #3b5cb8;
+    background-color: transparent;
+    color: #333;
+    font-size: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.auth-outline-btn:active {
+    background-color: #f0f4ff;
+}
+
+.auth-footer {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.auth-link {
+    color: #3b5cb8;
+    font-size: 15px;
+    text-decoration: none;
+}
+
+/* 2. 폼 입력창 (아이디 로그인 & 회원가입) */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group label {
+    display: block;
+    color: #3b5cb8;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    margin-left: 5px;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 15px;
+    border: 1.5px solid #3b5cb8;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/* 3. 완료 버튼 */
+.auth-submit-btn {
+    width: 100%;
+    padding: 16px;
+    background-color: #6a35ff; /* 메인 보라색 */
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.auth-submit-btn:active {
+    background-color: #5527d6;
 }

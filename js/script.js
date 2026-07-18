@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // ==========================================
     // 1. 스플래시(로딩) 화면 및 초기 화면 전환
-    // ==========================================
     const progressBar = document.getElementById('progress-bar');
     const splashScreen = document.getElementById('splash-screen');
     const appScreens = document.getElementById('app-screens');
@@ -22,9 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 2800); 
 
-    // ==========================================
     // 2. 햄버거 메뉴 열기/닫기
-    // ==========================================
     const menuBtn = document.getElementById('menu-btn');
     const sideMenu = document.getElementById('side-menu');
     let isMenuOpen = false;
@@ -40,21 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ==========================================
     // 3. 메인 화면 언어 선택 스크롤 기능
-    // ==========================================
     const leftArrow = document.getElementById('left-arrow');
     const rightArrow = document.getElementById('right-arrow');
     const langSlider = document.getElementById('lang-slider');
     const scrollBar = document.getElementById('scroll-bar');
     
     let currentScroll = 0;
-    const scrollAmount = 80; // 한 번 클릭 시 이동할 픽셀 수
+    const scrollAmount = 100;
+    const maxScroll = -250;   
 
     if (rightArrow && leftArrow && langSlider && scrollBar) {
         rightArrow.addEventListener('click', () => {
             currentScroll -= scrollAmount;
-            if (currentScroll < -150) currentScroll = -150; 
+            if (currentScroll < maxScroll) currentScroll = maxScroll; 
             updateSlider();
         });
 
@@ -66,17 +61,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function updateSlider() {
             langSlider.style.transform = `translateX(${currentScroll}px)`;
-            let barPosition = (Math.abs(currentScroll) / 150) * 30;
+            // 바 이동 비율도 최대 이동 거리(250)에 맞춰 조정
+            let barPosition = (Math.abs(currentScroll) / Math.abs(maxScroll)) * 30;
             scrollBar.style.left = `${barPosition}px`;
         }
     }
 
-    // ==========================================
     // 4. 화면 전환(네비게이션) 기능
-    // ==========================================
-    // ==========================================
-    // 4. 화면 전환(네비게이션) 기능
-    // ==========================================
     const screens = document.querySelectorAll('.screen');
     const navLinks = document.querySelectorAll('.nav-link');
     const placeholderTitle = document.getElementById('placeholder-title');
@@ -86,13 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
         screens.forEach(screen => {
             screen.style.display = screen.id === targetId ? 'flex' : 'none';
         });
-        // 화면 이동 후 메뉴 닫기
+
         if (sideMenu) {
             sideMenu.classList.remove('open');
             isMenuOpen = false; 
         }
 
-        // 🌟 추가된 부분: 사전 화면이 열릴 때 동적으로 아이템 개수를 계산하고 렌더링
         if (targetId === 'dictionary-screen') {
             calculateItemsPerPage();
             renderDictionary();
@@ -115,9 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         goHome.addEventListener('click', () => showScreen('main-screen'));
     }
 
-    // ==========================================
+
     // 5. 학교 용어 사전 데이터 및 로직
-    // ==========================================
     const rawData = [
         { term: "e-알리미 / 하이클래스", def: "학교 공식 소통 앱 (종이 가정통신문 대체 - 알림 반드시 켜둘 것)" },
         { term: "공개수업", def: "학부모가 수업을 지켜봄 (의무는 아니나 참여율 높음)" },
@@ -158,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let pageWindowStart = 1;
     
-    // 🌟 수정된 부분: const를 let으로 변경하여 유동적으로 변할 수 있게 합니다.
     let itemsPerPage = 5; 
     const maxPageButtons = 3;
 
@@ -168,20 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNext = document.getElementById('page-next');
     const searchInput = document.getElementById('dict-search');
 
-    // 🌟 추가된 함수: 화면 세로폭에 맞춰 보여줄 개수를 계산합니다.
-    // 🌟 수정된 아이템 개수 계산 함수
-    // 🌟 수정된 아이템 개수 계산 함수
-    // 🌟 수정된 아이템 개수 계산 함수 (잘림 방지)
-    // 🌟 수정된 아이템 개수 계산 함수
-    // 🌟 수정된 아이템 개수 계산 함수
-    // 🌟 수정된 아이템 개수 계산 함수
     function calculateItemsPerPage() {
         if (!dictList) return;
         
         const listHeight = dictList.clientHeight;
         
-        // 💡 핵심: 75 -> 95로 넉넉하게 변경. 
-        // 초성 제목(ㄱ,ㄴ,ㄷ)이 들어갈 공간까지 고려해 다음 페이지로 넘깁니다.
         const estimatedItemHeight = 95; 
 
         if (listHeight > 0) {
@@ -190,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsPerPage = 4; // 기본값을 4개 정도로 여유있게 설정
         }
     }
-    // 🌟 창 크기가 변할 때도 대응할 수 있도록 이벤트 추가 (선택사항이지만 추천)
+
     window.addEventListener('resize', () => {
         if (document.getElementById('dictionary-screen').style.display === 'flex') {
             calculateItemsPerPage();
@@ -229,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPagination();
     }
 
-    // 🌟 수정된 페이지네이션 렌더링 함수
     function renderPagination() {
         if (!pageNumbersDiv) return;
         pageNumbersDiv.innerHTML = '';
@@ -241,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 현재 페이지를 중앙에 두기 위한 시작 및 끝 페이지 계산
         let startPage, endPage;
         if (totalPages <= 3) {
             startPage = 1;
@@ -301,9 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // ==========================================
+
     // 6. 사전 검색 기능
-    // ==========================================
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             // 사용자가 입력한 검색어 (공백 제거 및 소문자 변환)
