@@ -5,3 +5,4 @@ server/.env
 server/data/
 *.db
 *.log
+js/config.js
