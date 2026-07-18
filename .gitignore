@@ -1,6 +1,7 @@
-target/
-data/
-.idea/
-*.iml
+node_modules/
+server/node_modules/
 .env
-.tools/
+server/.env
+server/data/
+*.db
+*.log
