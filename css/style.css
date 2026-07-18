@@ -372,6 +372,12 @@ body, html {
     cursor: pointer;
 }
 
+.lang-btn.selected {
+    background-color: #A43D32;
+    border-color: #A43D32;
+    color: #fff;
+}
+
 /* 스크롤 인디케이터 바 */
 .scroll-indicator-bg {
     width: 60px;
