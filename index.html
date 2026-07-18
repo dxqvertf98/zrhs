@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>맥아리 통역사</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="mobile-container">
+    <!-- 첫 번째 화면: 로딩 스플래시 -->
+    <div id="splash-screen">
+        <div class="header-text">맥아리 통역사</div>
+        
+        <div class="content-area">
+            <div class="logo-placeholder">로고</div>
+            <div class="loading-text">로딩중...</div>
+        </div>
+
+        <div class="loading-area">
+            <div class="character-placeholder">🐱</div>
+            <div class="loading-bar-container">
+                <div class="loading-bar-fill" id="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩이 끝난 후 보일 전체 앱 화면 (처음엔 숨김) -->
+    <div id="app-screens" style="display: none; height: 100%; flex-direction: column;">
+        
+        <!-- 공통 상단 헤더 -->
+        <header class="main-header">
+            <div class="logo-area">
+                <span class="site-title" id="go-home" style="cursor:pointer;">맥아리 통역사</span>
+                <div class="temp-logo">로고</div>
+            </div>
+            <button class="menu-btn" id="menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </header>
+
+        <!-- 두 번째 화면: 메인 페이지 -->
+        <main class="main-content screen" id="main-screen">
+            <textarea class="input-box" placeholder="알림장이나 가정통신문을 복사해주세요."></textarea>
+
+            <div class="language-section">
+                <div class="lang-controls">
+                    <button class="arrow-btn" id="left-arrow">◀</button>
+                    <div class="lang-slider-container" id="lang-container">
+                        <div class="lang-slider" id="lang-slider">
+                            <button class="lang-btn">베트남어</button>
+                            <button class="lang-btn">중국어</button>
+                            <button class="lang-btn">영어</button>
+                            <button class="lang-btn">일본어</button>
+                            <button class="lang-btn">몽골어</button>
+                        </div>
+                    </div>
+                    <button class="arrow-btn" id="right-arrow">▶</button>
+                    <button class="circle-btn">&gt;</button>
+                </div>
+                <div class="scroll-indicator-bg">
+                    <div class="scroll-indicator-bar" id="scroll-bar"></div>
+                </div>
+            </div>
+
+            <div class="output-box">
+                조금만 기다리시면 안내 사항이 나올 거예요!
+            </div>
+        </main>
+
+        <!-- 세 번째 화면: 학교 용어 사전 -->
+        <main class="main-content screen" id="dictionary-screen" style="display: none;">
+            <div class="search-container">
+                <input type="text" id="dict-search" class="search-input" placeholder="검색">
+                <span class="search-icon">🔍</span>
+            </div>
+            <div id="dict-list" class="dict-list"></div>
+            <div class="pagination">
+                <button class="page-btn" id="page-prev">&lt;</button>
+                <div id="page-numbers" class="page-numbers"></div>
+                <button class="page-btn" id="page-next">&gt;</button>
+            </div>
+        </main>
+
+        <!-- 네 번째 화면: 임시 페이지 (이전 대화 등) -->
+        <main class="main-content screen" id="placeholder-screen" style="display: none;">
+            <div class="main-text" id="placeholder-title">페이지 준비 중입니다.</div>
+        </main>
+
+        <!-- 슬라이드 메뉴 -->
+        <div class="side-menu" id="side-menu">
+            <div class="menu-content">
+                <a href="#" class="menu-item nav-link" data-target="placeholder-screen" data-title="이전 대화 보기">이전 대화 보기</a>
+                <a href="#" class="menu-item nav-link" data-target="placeholder-screen" data-title="우리 유치원 알림장">맥락 번역 서비스</a>
+                <a href="#" class="menu-item nav-link" data-target="dictionary-screen">학교 용어 사전</a>
+                
+                <div class="auth-area">
+                    <button class="login-btn">로그인</button>
+                    <a href="#" class="signup-link">회원가입</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/script.js"></script>
+
+</body>
+</html>
