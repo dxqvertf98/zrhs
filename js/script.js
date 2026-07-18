@@ -174,10 +174,7 @@ ${dictionaryContext}`;
     // Google AI Studio(Gemini) API를 브라우저에서 직접 호출합니다.
     // ⚠️ 보안 참고: API 키가 클라이언트 코드에 노출됩니다.
     // Google Cloud Console에서 이 키에 HTTP 리퍼러(도메인) 제한을 걸어두는 것을 권장합니다.
-
-    const GOOGLE_API_KEY = "GEMINI_API_KEY";
-
-  
+    const GOOGLE_API_KEY = window.MAEUMARI_GEMINI_API_KEY;
     const GEMINI_MODEL = "gemini-flash-latest";
 
     async function callAIModel(systemPrompt, userText) {
