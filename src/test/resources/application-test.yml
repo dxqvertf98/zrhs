@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:multicultural-support-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  jwt:
+    secret: test-secret-must-have-at-least-thirty-two-bytes-long
+    expiration-minutes: 60

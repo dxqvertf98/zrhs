@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: multicultural-support-api
+  datasource:
+    # 개발용 파일 DB입니다. 운영 환경에서는 환경 변수로 PostgreSQL 등의 DB URL을 주입하세요.
+    url: ${DATABASE_URL:jdbc:h2:file:./data/multicultural-support;MODE=PostgreSQL;AUTO_SERVER=TRUE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: ${DATABASE_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  jwt:
+    # 운영 환경에서는 반드시 32바이트 이상인 APP_JWT_SECRET을 설정하세요.
+    secret: ${APP_JWT_SECRET:change-this-development-secret-to-a-long-random-value-1234567890}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:10080}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:5500}
