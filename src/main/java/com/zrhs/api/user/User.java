@@ -28,6 +28,12 @@ public class User {
     @Column(nullable = false, length = 10)
     private String preferredLanguage;
 
+    @Column(unique = true, length = 254)
+    private String email;
+
+    @Column(nullable = false)
+    private boolean emailVerified;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -35,10 +41,16 @@ public class User {
     }
 
     public User(String username, String passwordHash, String displayName, String preferredLanguage) {
+        this(username, passwordHash, displayName, preferredLanguage, null, true);
+    }
+
+    public User(String username, String passwordHash, String displayName, String preferredLanguage, String email, boolean emailVerified) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
         this.preferredLanguage = preferredLanguage;
+        this.email = email;
+        this.emailVerified = emailVerified;
     }
 
     @PrePersist
@@ -51,5 +63,8 @@ public class User {
     public String getPasswordHash() { return passwordHash; }
     public String getDisplayName() { return displayName; }
     public String getPreferredLanguage() { return preferredLanguage; }
+    public String getEmail() { return email; }
+    public boolean isEmailVerified() { return emailVerified; }
+    public void markEmailVerified() { this.emailVerified = true; }
     public Instant getCreatedAt() { return createdAt; }
 }
