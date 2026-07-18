@@ -253,6 +253,9 @@ ${dictionaryContext}`;
             const systemPrompt = buildTranslationPrompt(langName, dictionaryContext);
             const html = await callAIModel(systemPrompt, text);
             renderTranslationResult(html);
+            saveConversationHistory(text, html, selectedLangCode).catch((error) => {
+                console.error('대화 기록 저장 실패:', error);
+            });
         } catch (error) {
             outputBox.classList.remove('has-content');
             outputBox.textContent = '번역 중 오류가 발생했어요: ' + error.message;
@@ -268,7 +271,6 @@ ${dictionaryContext}`;
     // 4. 화면 전환(네비게이션) 기능
     const screens = document.querySelectorAll('.screen');
     const navLinks = document.querySelectorAll('.nav-link');
-    const placeholderTitle = document.getElementById('placeholder-title');
     const goHome = document.getElementById('go-home');
 
     function showScreen(targetId) {
@@ -296,9 +298,6 @@ ${dictionaryContext}`;
             e.preventDefault();
             const targetId = link.getAttribute('data-target');
             
-            if (targetId === 'placeholder-screen' && placeholderTitle) {
-                placeholderTitle.textContent = link.getAttribute('data-title') + " 페이지 준비 중입니다.";
-            }
             showScreen(targetId);
         });
     });
@@ -502,10 +501,8 @@ ${dictionaryContext}`;
         });
     }
 
-    // 7. 회원가입, 로그인, 소셜 로그인
-    // 배포 환경에서는 index.html 전에 window.MAEUM_API_BASE_URL을 지정해 API 주소를 바꿀 수 있습니다.
-    const accessTokenKey = 'maeumari.accessToken';
-    const userKey = 'maeumari.user';
+    // 7. 회원가입, 로그인, 소셜 로그인, 이전 대화
+    let authSession = null;
     const loginForm = document.getElementById('id-login-form');
     const signupForm = document.getElementById('signup-form');
     const loginMessage = document.getElementById('login-message');
@@ -520,55 +517,18 @@ ${dictionaryContext}`;
     const historyStatus = document.getElementById('history-status');
     const historyList = document.getElementById('history-list');
 
-    function getAccessToken() {
-        return sessionStorage.getItem(accessTokenKey);
-    }
-
-    function getStoredUser() {
-        try {
-            return JSON.parse(sessionStorage.getItem(userKey));
-        } catch {
-            return null;
-        }
-    }
-
-    function saveSession(authResponse) {
-        sessionStorage.setItem(accessTokenKey, authResponse.accessToken);
-        sessionStorage.setItem(userKey, JSON.stringify(authResponse.user));
-        updateAuthArea();
-    }
-
-    function clearSession() {
-        sessionStorage.removeItem(accessTokenKey);
-        sessionStorage.removeItem(userKey);
-        updateAuthArea();
-    }
-
     function updateAuthArea() {
-        const user = getStoredUser();
-        const isLoggedIn = Boolean(getAccessToken() && user);
+        const user = authSession?.user;
+        const isLoggedIn = Boolean(user);
         if (signedInUser) {
             signedInUser.hidden = !isLoggedIn;
-            signedInUser.textContent = isLoggedIn ? `${user.displayName}님` : '';
+            signedInUser.textContent = isLoggedIn
+                ? `${user.user_metadata?.display_name || user.email}님`
+                : '';
         }
         if (menuLoginButton) menuLoginButton.hidden = isLoggedIn;
         if (menuSignupLink) menuSignupLink.hidden = isLoggedIn;
         if (logoutButton) logoutButton.hidden = !isLoggedIn;
-    }
-
-    async function apiRequest(path, options = {}) {
-        const response = await fetch(`${API_BASE_URL}${path}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-            }
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            throw new Error(data.message || '요청을 처리하지 못했습니다.');
-        }
-        return data;
     }
 
     function setMessage(element, message, isError = true) {
@@ -596,8 +556,8 @@ ${dictionaryContext}`;
                 throw error;
             }
 
-            console.log(data);
-
+            authSession = data.session;
+            updateAuthArea();
             loginForm.reset();
             showScreen('main-screen');
 
@@ -623,7 +583,13 @@ ${dictionaryContext}`;
         try {
             const { data, error } = await supabaseClient.auth.signUp({
                 email: formData.get('email'),
-                password: formData.get('password')
+                password: formData.get('password'),
+                options: {
+                    data: {
+                        display_name: formData.get('displayName'),
+                        preferred_language: formData.get('preferredLanguage')
+                    }
+                }
             });
 
             if (error) {
@@ -638,23 +604,18 @@ ${dictionaryContext}`;
                 false
             );
 
-            console.log(data);
-
         } catch (error) {
             setMessage(signupMessage, error.message);
         }
     });
 }
 
-    function startSocialLogin(provider) {
-        window.location.assign(`${API_BASE_URL}/oauth2/authorization/${provider}`);
-    }
-
     googleLoginButton.addEventListener("click", async()=>{
 
         const {error} =
         await supabaseClient.auth.signInWithOAuth({
-            provider:"google"
+            provider:"google",
+            options: { redirectTo: window.location.href }
         });
 
         if(error){
@@ -666,7 +627,8 @@ ${dictionaryContext}`;
 
         const {error} =
         await supabaseClient.auth.signInWithOAuth({
-            provider:"kakao"
+            provider:"kakao",
+            options: { redirectTo: window.location.href }
         });
 
         if(error){
@@ -676,8 +638,10 @@ ${dictionaryContext}`;
     });
 
     if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-            clearSession();
+        logoutButton.addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            authSession = null;
+            updateAuthArea();
             showScreen('main-screen');
         });
     }
@@ -694,84 +658,129 @@ ${dictionaryContext}`;
 
     async function loadConversationHistory() {
         if (!historyStatus || !historyList) return;
-        const token = getAccessToken();
         historyList.replaceChildren();
-        if (!token) {
-            historyStatus.textContent = '로그인하면 번역 기록을 확인할 수 있어요.';
+        if (!authSession) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            authSession = session;
+            updateAuthArea();
+        }
+        if (!authSession?.user) {
+            historyStatus.textContent = '로그인한 사용자만 이전 대화를 볼 수 있어요.';
             return;
         }
 
-        historyStatus.textContent = '이전 번역을 불러오는 중이에요.';
+        historyStatus.textContent = '이전 대화를 불러오는 중이에요.';
         try {
-            const conversations = await apiRequest('/api/conversations', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (conversations.length === 0) {
-                historyStatus.textContent = '아직 저장된 번역 기록이 없어요.';
+            const { data: conversations, error } = await supabaseClient
+                .from('conversation_history')
+                .select('id, title, question, answer_html, created_at')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            if (!conversations?.length) {
+                historyStatus.textContent = '아직 저장된 대화가 없어요.';
                 return;
             }
 
-            historyStatus.textContent = `${conversations.length}개의 번역 기록이 있어요.`;
+            historyStatus.textContent = `${conversations.length}개의 이전 대화가 있어요.`;
             conversations.forEach((conversation) => {
-                const item = document.createElement('button');
-                item.type = 'button';
+                const item = document.createElement('article');
                 item.className = 'history-item';
+
+                const header = document.createElement('div');
+                header.className = 'history-item-header';
+                const title = document.createElement('button');
+                title.type = 'button';
+                title.className = 'history-title-button';
+                title.textContent = conversation.title;
+                title.setAttribute('aria-expanded', 'false');
+                const editButton = document.createElement('button');
+                editButton.type = 'button';
+                editButton.className = 'history-edit-button';
+                editButton.textContent = '제목 편집';
 
                 const original = document.createElement('p');
                 original.className = 'history-original';
-                original.textContent = conversation.originalText;
-                const translation = document.createElement('p');
-                translation.className = 'history-translation';
-                translation.textContent = conversation.translatedText;
+                original.textContent = conversation.question;
+                const answer = document.createElement('div');
+                answer.className = 'history-answer';
+                answer.hidden = true;
+                const answerLabel = document.createElement('strong');
+                answerLabel.className = 'history-answer-label';
+                answerLabel.textContent = 'AI 답변';
+                const answerBody = document.createElement('div');
+                answerBody.className = 'history-answer-body';
+                answerBody.innerHTML = window.DOMPurify
+                    ? DOMPurify.sanitize(conversation.answer_html, { ADD_ATTR: ['data-term', 'data-explain'] })
+                    : conversation.answer_html;
+                answer.append(answerLabel, answerBody);
                 const date = document.createElement('time');
                 date.className = 'history-date';
-                date.dateTime = conversation.createdAt;
-                date.textContent = new Date(conversation.createdAt).toLocaleString('ko-KR');
-                item.append(original, translation, date);
-                item.addEventListener('click', () => {
-                    const input = document.querySelector('.input-box');
-                    const output = document.querySelector('.output-box');
-                    if (input) input.value = conversation.originalText;
-                    if (output) output.textContent = conversation.translatedText;
-                    showScreen('main-screen');
+                date.dateTime = conversation.created_at;
+                date.textContent = new Date(conversation.created_at).toLocaleString('ko-KR');
+                header.append(title, editButton);
+                item.append(header, original, answer, date);
+
+                title.addEventListener('click', () => {
+                    answer.hidden = !answer.hidden;
+                    title.setAttribute('aria-expanded', String(!answer.hidden));
+                });
+                editButton.addEventListener('click', async () => {
+                    const nextTitle = window.prompt('대화 제목', conversation.title)?.trim();
+                    if (!nextTitle || nextTitle === conversation.title) return;
+                    editButton.disabled = true;
+                    try {
+                        const { error } = await supabaseClient
+                            .from('conversation_history')
+                            .update({ title: nextTitle })
+                            .eq('id', conversation.id);
+                        if (error) throw error;
+                        conversation.title = nextTitle;
+                        title.textContent = nextTitle;
+                    } catch (error) {
+                        window.alert(`제목을 저장하지 못했습니다: ${error.message}`);
+                    } finally {
+                        editButton.disabled = false;
+                    }
                 });
                 historyList.appendChild(item);
             });
         } catch (error) {
-            if (error.message.includes('로그인') || error.message.includes('인증')) clearSession();
-            historyStatus.textContent = error.message;
+            historyStatus.textContent = `이전 대화를 불러오지 못했습니다: ${error.message}`;
         }
     }
 
-    async function completeOAuthLogin() {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        const token = params.get('access_token');
-        const oauthError = params.get('oauth_error');
-        if (!token && !oauthError) return;
-        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
-        if (oauthError) {
-            setMessage(socialMessage, oauthError);
-            requestedInitialScreen = 'login-screen';
-            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
-            return;
-        }
-        try {
-            const user = await apiRequest('/api/auth/me', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            saveSession({ accessToken: token, user });
-            requestedInitialScreen = 'main-screen';
-            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
-        } catch (error) {
-            setMessage(socialMessage, '소셜 로그인 정보를 확인하지 못했습니다. 다시 시도해 주세요.');
-            requestedInitialScreen = 'login-screen';
-            if (appScreens && appScreens.style.display === 'flex') showScreen(requestedInitialScreen);
-        }
+    function makeConversationTitle(question) {
+        const compactQuestion = question.replace(/\s+/g, ' ').trim();
+        return compactQuestion.length > 32 ? `${compactQuestion.slice(0, 32)}…` : compactQuestion;
     }
+
+    async function saveConversationHistory(question, answerHtml, targetLanguage) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session?.user) return;
+        const { error } = await supabaseClient
+            .from('conversation_history')
+            .insert({
+                user_id: session.user.id,
+                title: makeConversationTitle(question),
+                question,
+                answer_html: answerHtml,
+                target_language: targetLanguage
+            });
+        if (error) throw error;
+    }
+
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+        authSession = session;
+        updateAuthArea();
+    });
+
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        authSession = session;
+        updateAuthArea();
+    });
 
     updateAuthArea();
     configureSocialLoginButtons();
-    completeOAuthLogin();
 })
 
 console.log(supabaseClient);

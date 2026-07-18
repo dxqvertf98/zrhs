@@ -714,14 +714,51 @@ body, html {
     border: 1px solid #e2dcd9; /* 연보라(#d7d0f3)에서 기획안 톤에 맞춘 연한 브라운그레이로 변경 */
     border-radius: 12px;
     background: #fdfbfa; /* 연보라 바탕(#faf9ff)에서 웜톤 바탕으로 변경 */
-    cursor: pointer;
     font-family: inherit;
     text-align: left;
 }
 
-.history-item:focus-visible {
+.history-item:focus-within {
     outline: 2px solid #A43D32;
     outline-offset: 2px;
+}
+
+.history-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.history-title-button {
+    flex: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #3a110c;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+}
+
+.history-edit-button {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    border: 1px solid #A43D32;
+    border-radius: 8px;
+    background: #fff;
+    color: #A43D32;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.history-edit-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 .history-original,
@@ -741,6 +778,27 @@ body, html {
     color: #222;
     font-size: 15px;
     font-weight: 600;
+}
+
+.history-answer {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 9px;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.history-answer-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #A43D32;
+    font-size: 13px;
+}
+
+.history-answer-body {
+    word-break: break-word;
 }
 
 .history-date {
