@@ -52,11 +52,11 @@ class AuthAndConversationApiTest {
         MvcResult result = mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"%s","password":"password-123","displayName":"보호자","preferredLanguage":"en"}
+                                {"username":"%s","password":"password-123","displayName":"보호자","preferredLanguage":"en","email":"parent@example.com","termsAccepted":true}
                                 """.formatted(username)))
                 .andExpect(status().isCreated())
                 .andReturn();
         JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
-        return response.get("accessToken").asText();
+        return response.get("authentication").get("accessToken").asText();
     }
 }

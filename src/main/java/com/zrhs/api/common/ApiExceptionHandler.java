@@ -28,6 +28,16 @@ public class ApiExceptionHandler {
         return response(HttpStatus.CONFLICT, exception.getMessage(), request, Map.of());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    ResponseEntity<ApiError> badRequest(BadRequestException exception, HttpServletRequest request) {
+        return response(HttpStatus.BAD_REQUEST, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    ResponseEntity<ApiError> serviceUnavailable(ServiceUnavailableException exception, HttpServletRequest request) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request, Map.of());
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     ResponseEntity<ApiError> unauthorized(UnauthorizedException exception, HttpServletRequest request) {
         return response(HttpStatus.UNAUTHORIZED, exception.getMessage(), request, Map.of());

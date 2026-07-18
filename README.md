@@ -37,6 +37,24 @@ http://localhost:8080/login/oauth2/code/kakao
 
 로그인 성공 뒤에는 `APP_OAUTH_SUCCESS_REDIRECT_URI`로 돌아가며, 프론트엔드가 URL fragment의 일회성 로그인 토큰을 받아 세션에 저장합니다. 프론트 페이지의 기본 API 주소는 `http://localhost:8080`이고, 다른 주소를 쓸 경우 `window.MAEUM_API_BASE_URL`에 지정할 수 있습니다.
 
+Google은 **Client ID와 Client Secret 둘 다** 필요합니다. Client ID만 설정하면 Google 버튼은 의도적으로 비활성화됩니다. Kakao는 REST API 키로 기본 로그인이 가능하며, Kakao 콘솔에서 Client Secret을 사용 설정했다면 `KAKAO_CLIENT_SECRET`도 넣어야 합니다.
+
+## 배포용 회원가입
+
+회원가입은 아이디·이메일 중복 검사, BCrypt 비밀번호 해시, 영문+숫자를 포함한 10자 이상 비밀번호, 약관 동의를 검증합니다. 배포에서는 이메일 인증도 켜세요.
+
+```powershell
+$env:APP_REQUIRE_EMAIL_VERIFICATION = "true"
+$env:APP_MAIL_FROM = "no-reply@your-domain.com"
+$env:APP_EMAIL_VERIFICATION_URL = "https://api.your-domain.com/api/auth/verify-email"
+$env:SPRING_MAIL_HOST = "smtp.example.com"
+$env:SPRING_MAIL_PORT = "587"
+$env:SPRING_MAIL_USERNAME = "SMTP 계정"
+$env:SPRING_MAIL_PASSWORD = "SMTP 비밀번호 또는 앱 비밀번호"
+```
+
+이 설정을 켜면 가입 직후 인증 링크가 이메일로 발송되고, 인증을 마친 계정만 로그인할 수 있습니다. 로컬 개발에서는 메일 서버가 없으므로 기본값이 꺼져 있습니다.
+
 ## API
 
 모든 요청·응답 본문은 JSON입니다. 로그인 또는 회원가입 응답의 `accessToken`은 브라우저의 안전한 저장소에 보관하고, 보호된 API에 아래처럼 전달합니다.

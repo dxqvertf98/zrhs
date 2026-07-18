@@ -418,11 +418,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         username: formData.get('username'),
                         password: formData.get('password'),
                         displayName: formData.get('displayName'),
-                        preferredLanguage: formData.get('preferredLanguage')
+                        preferredLanguage: formData.get('preferredLanguage'),
+                        email: formData.get('email'),
+                        termsAccepted: formData.get('termsAccepted') === 'on'
                     })
                 });
-                saveSession(result);
                 signupForm.reset();
+                if (result.emailVerificationRequired) {
+                    setMessage(signupMessage, result.message, false);
+                    return;
+                }
+                saveSession(result.authentication);
                 showScreen('main-screen');
             } catch (error) {
                 setMessage(signupMessage, error.message);

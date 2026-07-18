@@ -11,3 +11,11 @@ app:
   jwt:
     secret: test-secret-must-have-at-least-thirty-two-bytes-long
     expiration-minutes: 60
+  oauth:
+    providers:
+      google:
+        client-id: ""
+        client-secret: ""
+      kakao:
+        client-id: ""
+        client-secret: ""

@@ -133,16 +133,20 @@
                     <input id="signup-display-name" name="displayName" type="text" class="auth-input" maxlength="50" autocomplete="name" required>
                 </div>
                 <div class="input-group">
+                    <label for="signup-email">이메일</label>
+                    <input id="signup-email" name="email" type="email" class="auth-input" maxlength="254" autocomplete="email" required>
+                </div>
+                <div class="input-group">
                     <label for="signup-username">아이디</label>
                     <input id="signup-username" name="username" type="text" class="auth-input" minlength="4" maxlength="40" autocomplete="username" required>
                 </div>
                 <div class="input-group">
                     <label for="signup-password">비밀번호</label>
-                    <input id="signup-password" name="password" type="password" class="auth-input" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <input id="signup-password" name="password" type="password" class="auth-input" minlength="10" maxlength="72" autocomplete="new-password" required>
                 </div>
                 <div class="input-group">
                     <label for="signup-password-confirm">비밀번호 확인</label>
-                    <input id="signup-password-confirm" name="passwordConfirm" type="password" class="auth-input" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <input id="signup-password-confirm" name="passwordConfirm" type="password" class="auth-input" minlength="10" maxlength="72" autocomplete="new-password" required>
                 </div>
                 <div class="input-group">
                     <label for="signup-language">주 사용 언어</label>
@@ -153,6 +157,10 @@
                         <option value="ja">일본어</option>
                         <option value="mn">몽골어</option>
                     </select>
+                </div>
+                <div class="terms-group">
+                    <input id="signup-terms" name="termsAccepted" type="checkbox" required>
+                    <label for="signup-terms">서비스 이용약관과 개인정보 처리방침에 동의합니다.</label>
                 </div>
                 <button type="submit" class="auth-submit-btn">완료</button>
             </form>
