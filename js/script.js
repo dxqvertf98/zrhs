@@ -191,8 +191,21 @@ ${dictionaryContext}`;
         );
 
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`AI 번역 서버 호출에 실패했습니다: ${errText}`);
+            const errorBody = await response.json().catch(() => ({}));
+            const apiError = errorBody.error || {};
+
+            if (response.status === 429 || apiError.status === 'RESOURCE_EXHAUSTED') {
+                const retryDelay = apiError.details
+                    ?.find((detail) => detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo')
+                    ?.retryDelay;
+                const retrySeconds = Math.ceil(Number.parseFloat(retryDelay));
+                const retryMessage = Number.isFinite(retrySeconds)
+                    ? `${retrySeconds}초 후 다시 시도해주세요.`
+                    : '잠시 후 다시 시도해주세요.';
+                throw new Error(`Gemini 무료 요청 한도에 도달했어요. ${retryMessage}`);
+            }
+
+            throw new Error(apiError.message || 'AI 번역 서버 호출에 실패했습니다.');
         }
 
         const data = await response.json();
