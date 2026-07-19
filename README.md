@@ -1,6 +1,6 @@
 # 맥아리 통역사 API
 
-Node.js(Express) + SQLite 백엔드입니다. 회원가입·로그인, Google/Kakao 소셜 로그인, 로그인한 사용자의 번역 기록 저장/조회를 지원합니다.
+Node.js(Express) + SQLite 백엔드입니다. 이메일 회원가입·로그인과 로그인한 사용자의 번역 기록 저장·조회를 지원합니다.
 
 ## 실행
 
@@ -21,25 +21,6 @@ npm start
 | 변수 | 설명 |
 |---|---|
 | `APP_JWT_SECRET` | JWT 서명용 비밀키 (32자 이상 권장) |
-| `APP_OAUTH_SUCCESS_REDIRECT_URI` | 소셜 로그인 후 돌아갈 프론트 주소 |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `KAKAO_CLIENT_ID` | Kakao REST API 키 |
-| `KAKAO_CLIENT_SECRET` | Kakao Client Secret 사용 시에만 |
-
-Google은 **Client ID와 Client Secret 둘 다** 필요합니다. Client Secret은 [Google Cloud Console](https://console.cloud.google.com/) → 사용자 인증 정보에서 확인할 수 있습니다.
-
-## OAuth 콘솔 설정
-
-각 제공자 콘솔에 아래 **백엔드 콜백 URI**를 등록하세요.
-
-```text
-http://localhost:8080/login/oauth2/code/google
-http://localhost:8080/login/oauth2/code/kakao
-```
-
-Kakao Developers → 내 애플리케이션 → 플랫폼 → Web → Redirect URI에 Kakao URI를 추가하세요.
-
-Google Cloud Console → OAuth 클라이언트 → 승인된 리디렉션 URI에 Google URI를 추가하세요.
 
 ## API
 
@@ -53,9 +34,6 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | 회원가입 | `POST /api/auth/signup` | 불필요 |
 | 로그인 | `POST /api/auth/login` | 불필요 |
-| 사용 가능한 소셜 로그인 | `GET /api/auth/social/providers` | 불필요 |
-| Google 로그인 시작 | `GET /oauth2/authorization/google` | 불필요 |
-| Kakao 로그인 시작 | `GET /oauth2/authorization/kakao` | 불필요 |
 | 내 정보 | `GET /api/auth/me` | 필요 |
 | 대화 저장 | `POST /api/conversations` | 필요 |
 | 내 이전 대화 목록 | `GET /api/conversations` | 필요 |

@@ -520,9 +520,6 @@ ${dictionaryContext}`;
     const signupForm = document.getElementById('signup-form');
     const loginMessage = document.getElementById('login-message');
     const signupMessage = document.getElementById('signup-message');
-    const socialMessage = document.getElementById('social-login-message');
-    const googleLoginButton = document.getElementById('google-login-btn');
-    const kakaoLoginButton = document.getElementById('kakao-login-btn');
     const menuLoginButton = document.getElementById('menu-login-btn');
     const menuSignupLink = document.getElementById('menu-signup-link');
     const logoutButton = document.getElementById('logout-btn');
@@ -613,7 +610,7 @@ ${dictionaryContext}`;
 
             setMessage(
                 signupMessage,
-                '회원가입 성공! 이메일 인증을 확인해주세요.',
+                '회원가입 성공!',
                 false
             );
 
@@ -623,33 +620,6 @@ ${dictionaryContext}`;
     });
 }
 
-    googleLoginButton.addEventListener("click", async()=>{
-
-        const {error} =
-        await supabaseClient.auth.signInWithOAuth({
-            provider:"google",
-            options: { redirectTo: window.location.href }
-        });
-
-        if(error){
-            console.log(error.message);
-        }
-    });
-
-    kakaoLoginButton.addEventListener("click", async()=>{
-
-        const {error} =
-        await supabaseClient.auth.signInWithOAuth({
-            provider:"kakao",
-            options: { redirectTo: window.location.href }
-        });
-
-        if(error){
-            console.log(error.message);
-        }
-
-    });
-
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             await supabaseClient.auth.signOut();
@@ -658,16 +628,6 @@ ${dictionaryContext}`;
             showScreen('main-screen');
         });
     }
-
-    function configureSocialLoginButtons() {
-    if (googleLoginButton) {
-        googleLoginButton.disabled = false;
-    }
-
-    if (kakaoLoginButton) {
-        kakaoLoginButton.disabled = false;
-    }
-}
 
     async function loadConversationHistory() {
         if (!historyStatus || !historyList) return;
@@ -793,7 +753,6 @@ ${dictionaryContext}`;
     });
 
     updateAuthArea();
-    configureSocialLoginButtons();
 })
 
 console.log(supabaseClient);

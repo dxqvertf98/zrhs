@@ -99,12 +99,8 @@
         <main class="main-content screen auth-screen" id="login-screen" style="display: none;">
             <h2 class="auth-title">로그인</h2>
             <div class="auth-button-group">
-                <button type="button" class="auth-outline-btn" id="google-login-btn">Google 로그인</button>
-                <button type="button" class="auth-outline-btn" id="kakao-login-btn">Kakao 로그인</button>
-                <!-- 아이디 로그인 클릭 시 id-login-screen으로 이동 -->
-                <button type="button" class="auth-outline-btn nav-link" data-target="id-login-screen">아이디 로그인</button>
+                <button type="button" class="auth-outline-btn nav-link" data-target="id-login-screen">이메일 로그인</button>
             </div>
-            <p class="auth-message" id="social-login-message" aria-live="polite"></p>
             <div class="auth-footer">
                 <!-- 회원가입 클릭 시 signup-screen으로 이동 -->
                 <a href="#" class="auth-link nav-link" data-target="signup-screen">회원가입</a>
@@ -124,6 +120,9 @@
                     <input id="login-password" name="password" type="password" class="auth-input" autocomplete="current-password" required>
                 </div>
                 <button type="submit" class="auth-submit-btn">완료</button>
+                <div class="auth-footer">
+                    <a href="#" class="auth-link nav-link" data-target="signup-screen">회원가입</a>
+                </div>
             </form>
             <p class="auth-message" id="login-message" aria-live="polite"></p>
         </main>
@@ -165,9 +164,6 @@
                 <button type="submit" class="auth-submit-btn">완료</button>
             </form>
             <p class="auth-message" id="signup-message" aria-live="polite"></p>
-            <div class="auth-footer">
-                <a href="#" class="auth-link nav-link" data-target="signup-screen">회원가입</a>
-            </div>
         </main>
 
         <!-- 슬라이드 메뉴 -->
